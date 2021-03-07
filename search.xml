@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>CentOS 7 上安装 MySQL 5.7</title>
+    <url>/posts/f35f8af2/</url>
+    <content><![CDATA[<h2 id="开始安装"><a href="#开始安装" class="headerlink" title="开始安装"></a>开始安装</h2><p>卸载自带 mariadb 和已安装的 MySQL，如遇到依赖问题导致卸载出错则加上 <code>--nodeps</code> 参数：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line"><span class="comment"># 停止服务</span></span><br><span class="line">systemctl stop mysqld mariadb</span><br><span class="line">systemctl <span class="built_in">disable</span> mysqld mariadb</span><br><span class="line"><span class="comment"># 卸载已安装服务</span></span><br><span class="line">rpm -qa | grep mysql | xargs rpm -e</span><br><span class="line">rpm -qa | grep mariadb | xargs rpm -e --nodeps</span><br><span class="line"><span class="comment"># 删除相关文件</span></span><br><span class="line">rm -rvf /etc/my.cnf /var/lib/mysql /var/<span class="built_in">log</span>/mysqld.log</span><br><span class="line"><span class="comment"># 删除用户，非必须</span></span><br><span class="line">userdel -rf mysql</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="下载安装-MySQL"><a href="#下载安装-MySQL" class="headerlink" title="下载安装 MySQL"></a>下载安装 MySQL</h2><h3 id="网络畅通推荐使用-YUM"><a href="#网络畅通推荐使用-YUM" class="headerlink" title="网络畅通推荐使用 YUM"></a>网络畅通推荐使用 YUM</h3><p>下载 Repository：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">wget -c http://repo.mysql.com/mysql57-community-release-el7-10.noarch.rpm <span class="comment">#  -c 断点续传</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>安装 Repository：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">yum -y install mysql57-community-release-el7-10.noarch.rpm</span><br></pre></td></tr></tbody></table></figure>
+
+<p>安装服务器：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">yum -y install mysql-community-server</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="无网络先在有网络的地方下载安装包"><a href="#无网络先在有网络的地方下载安装包" class="headerlink" title="无网络先在有网络的地方下载安装包"></a>无网络先在有网络的地方下载安装包</h3><p>下载地址：<a href="https://downloads.mysql.com/archives/community/">https://downloads.mysql.com/archives/community/</a>，选择对应版本下载。</p>
+<blockquote>
+<p>推荐下载 mysql-5.7.30-1.el7.x86_64.rpm-bundle.tar</p>
+</blockquote>
+<p>解压下载的 tar 包，按如下顺序安装：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">rpm -ivh mysql-community-common-5.7.30-1.el7.x86_64.rpm</span><br><span class="line">rpm -ivh mysql-community-libs-5.7.30-1.el7.x86_64.rpm</span><br><span class="line">rpm -ivh mysql-community-client-5.7.30-1.el7.x86_64.rpm</span><br><span class="line">rpm -ivh mysql-community-server-5.7.30-1.el7.x86_64.rpm</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="启动服务"><a href="#启动服务" class="headerlink" title="启动服务"></a>启动服务</h2><p>启动服务：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">systemctl start mysqld</span><br></pre></td></tr></tbody></table></figure>
+
+<p>设置开机启动：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">systemctl <span class="built_in">enable</span> mysqld</span><br><span class="line">systemctl daemon-reload</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="修改登录密码"><a href="#修改登录密码" class="headerlink" title="修改登录密码"></a>修改登录密码</h2><p>查看安装完之后 root 用户的临时密码：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">grep <span class="string">"temporary password"</span> /var/<span class="built_in">log</span>/mysqld.log | awk -F <span class="string">" "</span> <span class="string">'{print $11}'</span> | awk <span class="string">'END{print}'</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>登录 MySQL，第一次登录需要修改密码之后才能操作：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></tbody></table></figure>
+
+<p>输入临时密码登录，然后修改用户密码：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">mysql&gt; ALTER USER 'root'@'localhost' IDENTIFIED BY '你的密码';</span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p>注意：</p>
+<p>MySQL 内置默认密码策略较严格，如需使用较简单的密码，先修改复杂密码之后方可修改密码策略。</p>
+<p>查看密码策略：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">mysql&gt; SHOW VARIABLES LIKE "%password%";</span><br></pre></td></tr></tbody></table></figure>
+
+<p>修改密码长度，最短为 4，设置低于 4 仍然为 4：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">mysql&gt; SET GLOBAL validate_password_length=4;</span><br></pre></td></tr></tbody></table></figure>
+
+<p>修改密码强度：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">mysql&gt; SET GLOBAL validate_password_policy=0;</span><br></pre></td></tr></tbody></table></figure>
+
+<p>再通过上述 <code>ALTER USER</code> 修改较简单的密码。</p>
+<p>此时为临时修改，永久修改需要修改 MySQL 配置文件 /etc/my.conf。</p>
+<p>将以下内容添加到 /etc/my.conf 中：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">validate_password_policy=0</span><br><span class="line">validate_password_length=4</span><br></pre></td></tr></tbody></table></figure>
+
+<p>重启服务即可：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">systemctl restart mysqld </span><br></pre></td></tr></tbody></table></figure>
+</blockquote>
+<p>刷新权限：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">mysql&gt; FLUSH PRIVILEGES;</span><br></pre></td></tr></tbody></table></figure>
+
+<p>允许远程登录：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">mysql&gt; GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' IDENTIFIED BY '你的密码' WITH GRANT OPTION;</span><br></pre></td></tr></tbody></table></figure>
+
+<p>退出：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">mysql&gt; exit</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="开放-3306-端口或者关闭防火墙"><a href="#开放-3306-端口或者关闭防火墙" class="headerlink" title="开放 3306 端口或者关闭防火墙"></a>开放 3306 端口或者关闭防火墙</h2><p>开放 3306 端口：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">firewall-cmd --permanent --add-port=3306/tcp</span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p>查看防火墙规则：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">firewall-cmd --list-all</span><br></pre></td></tr></tbody></table></figure>
+</blockquote>
+<p>关闭防火墙：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">systemctl stop firewalld</span><br></pre></td></tr></tbody></table></figure>
+
+<p>取消防火墙开机自启：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">systemctl <span class="built_in">disable</span> firewalld</span><br><span class="line">systemctl daemon-reload</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="配置-MySQL-默认编码"><a href="#配置-MySQL-默认编码" class="headerlink" title="配置 MySQL 默认编码"></a>配置 MySQL 默认编码</h2><p>配置 MySQL 默认编码为 utf8，修改 MySQL 配置文件 /etc/my.conf。</p>
+<p>将以下内容添加到 /etc/my.conf 中：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">character_set_server=utf8</span><br><span class="line">init_connect=<span class="string">'SET NAMES utf8'</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>重启服务即可：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">systemctl restart mysqld </span><br></pre></td></tr></tbody></table></figure>
+
+<p>登录 MySQL 查看是否修改成功：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">mysql&gt; show variables like '%character%';</span><br></pre></td></tr></tbody></table></figure>
+
+<h2 id="安装完成"><a href="#安装完成" class="headerlink" title="安装完成"></a>安装完成</h2><p>完成上述步骤后就完成了 CentOS7 下 MySQL 5.7 Server 的安装，可使用 Navicat 等数据库管理软件连接。</p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>技术</category>
+        <category>环境搭建</category>
+      </categories>
+      <tags>
+        <tag>MySQL</tag>
+        <tag>CentOS</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Java 容器 - 概述</title>
+    <url>/posts/81a892b9/</url>
+    <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>一个程序在运行过程中会根据某些条件创建多个对象，这些条件和创建对象的个数在运行之前都是未知的。为此，Java 提供了多种方式来保存对象（对象的引用）。比如数组，但是数组的大小在创建时就已固定，不适合复杂的持有对象的场景。除此之外，Java 类库中还提供了一套容器类来解决这个问题。</p>
+<p>其中基本的类型是 <strong>List</strong>、<strong>Set</strong>、<strong>Queue</strong> 和 <strong>Map</strong>，这些对象类型也称为<em>集合类</em>，但由于 Java 类库中使用了 <strong>Collection</strong> 这个名词指代某一对象，所以把这些用来保存对象的类统称为”容器“。</p>
+<h2 id="类图"><a href="#类图" class="headerlink" title="类图"></a>类图</h2><p>JDK 8 中 Collection 和 Map 的类图如下所示：<br><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/blog/Collection.svg" alt="Collection"></p>
+<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/blog/Map.svg" alt="Map"></p>
+<p>其中单独列出的接口和类：</p>
+<ul>
+<li><p>Comparator</p>
+<p>比较器接口，是一个函数式接口，可通过实现其方法 <code>compare()</code> 对容器中的元素进行排序。</p>
+</li>
+<li><p>RandomAccess</p>
+<p>是一个空接口，标识一个 <code>List</code> 是否支持快速随机访问，一个 List 支持快速随机访问时，使用 for 循环遍历比采用 Iterator 迭代器遍历更快速。实现类：<code>ArrayList</code>，<code>AttributeList</code>，<code>CopyOnWriteArrayList</code>，<code>RoleList</code>，<code>RoleUnresolvedList</code>，<code>Stack</code>，<code>Vector</code>。</p>
+</li>
+<li><p>Iterator 和 ListIterator</p>
+<p><code>Iterator</code> 接口使用了迭代器设计模式来对所有的容器进行快速遍历，容器本身不需要关注存储元素的数据类型，这些确定类型和转型的工作由 <code>Iterator</code> 负责实现。<code>Iterator</code> 只支持<code>hasNext()</code>、<code>next()</code>、<code>remove()</code> 三种操作，而 <code>ListIterator</code> 是 List 容器所独有的迭代器，与 <code>Iterator</code> 相比，<code>ListIterator</code> 还包含 <code>add()</code>、<code>hasPrevious()</code>、<code>previous()</code>、<code>nextIndex()</code>、<code>previousIndex()</code>、<code>set()</code>  等方法，能够在遍历过程中修改集合、逆向顺序遍历、定位遍历索引；而 <code>Iterator</code> 只能遍历不能修改、只能顺向顺序遍历、不能定位索引。</p>
+</li>
+<li><p>Iterable</p>
+<p>允许实现此接口的对象使用 <code>for-each loop</code>。<code>Iterable</code> 接口的实现又依赖于实现了 <code>Iterator</code> 的内部类(参照 <code>LinkedList</code> 中 <code>listIterator()</code> 和 <code>descendingIterator()</code> 的 JDK 源码)。有的容器类会有多个实现 <code>Iterator</code> 接口的内部类，通过返回不同的迭代器实现不同的迭代方式。</p>
+</li>
+<li><p>Arrays 和 Collections</p>
+<p><code>Arrays</code> 是关于数组的封装类，封装了对数组操作的多种方法，如 <code>sort()</code>、<code>copyOf()</code>、<code>binarySearch()</code>、<code>asList()</code> 等方法；<code>Collections</code> 封装了很多对于容器的操作，如 <code>max()</code>、<code>min()</code>、<code>reverse()</code>、<code>sort()</code> 等方法，生成同步容器如 <code>Collections.synchronizedList()</code>、<code>Collections.synchronizedSet()</code> 等。</p>
+</li>
+</ul>
+<h2 id="Set"><a href="#Set" class="headerlink" title="Set"></a>Set</h2><p>Set 的值是不可重复的，无序的，最多只有一个 <code>null</code> 值。</p>
+<p>其子容器主要包括：</p>
+<ul>
+<li>AbstractSet：抽象集合类，实现了 <code>equals()</code> 和 <code>hashCode()</code> 方法</li>
+<li>SortedSet：有序（默认自然序）</li>
+<li>NavigableSet：继承自 <code>SortedSet</code></li>
+<li>TreeSet：实现 <code>NavigableSet</code> 接口，继承 <code>AbstractSet</code></li>
+<li>HashSet：hash 方式存储（实际上是一个 Map 的实例）</li>
+<li>LinkedHashSet：双向循环链表，不可重复，顺序与插入顺序保持一致，或者实现自定义的顺序</li>
+<li>EmumSet：只能存放 <code>Emum</code> 枚举类型</li>
+</ul>
+<h2 id="List"><a href="#List" class="headerlink" title="List"></a>List</h2><p>List 的值是可重复的、无序的、可添加 <code>null</code> 值。</p>
+<p>List 子容器主要包括：</p>
+<ul>
+<li>ArrayList：数组实现，随机存取</li>
+<li>LinkedList：双向循环链表，顺序存取</li>
+<li>Vector：同步，其他与 <code>ArrayList</code> 相同</li>
+<li>Stack：同步，继承自 <code>Vector</code>，“先进后出”</li>
+</ul>
+<h2 id="Queue"><a href="#Queue" class="headerlink" title="Queue"></a>Queue</h2><p>Queue 实现了数据结构中的队列，具有“先进先出”的特点。</p>
+<p>主要的子容器包括：</p>
+<ul>
+<li>AbstractQueue：抽象队列</li>
+<li>PriorityQueue：继承自 <code>AbstractQueue</code>，数据结构中堆 Heap 的实现</li>
+<li>Deque：双端队列，两端都可以插入和删除 <ul>
+<li>输出受限的双端队列 </li>
+<li>输入受限的双端队列 </li>
+</ul>
+</li>
+</ul>
+<h2 id="Map"><a href="#Map" class="headerlink" title="Map"></a>Map</h2><p>Map 容器是利用映射关系来存储键值对的，独立于 <code>List</code>、<code>Set</code>、<code>Queue</code>。键值对是一一对应的关系，一般允许键值为空，不可重复，是完全抽象类 <code>Dictionary</code> 的接口版本。</p>
+<p>Map的子容器主要包括：</p>
+<ul>
+<li>AbstractMap：实现了内部 <code>EntrySet</code> 接口，实现 <code>equals()</code>、<code>hashCode()</code> 方法</li>
+<li>SortedMap：有序（默认自然序）</li>
+<li>NavigableMap：继承自 <code>SortMap</code></li>
+<li>TreeMap：基于红黑树，实现 <code>NavigableMap</code> 接口，继承 <code>Abstractmap</code></li>
+<li>HashMap：非同步，允许 <code>null</code></li>
+<li>LinkedHashMap：非同步，允许 <code>null</code>，双向循环链表，顺序与插入顺序一致（类比于 <code>LinkedHashSet</code> ），或者实现自定义顺序。</li>
+<li>HashTable：同步，不允许 <code>null</code></li>
+<li>EmumMap：只能存放 <code>Emum</code> 枚举类型</li>
+<li>WeakHashMap：弱键（weak key）映射，允许释放映射所指向的对象，为解决某类特殊问题而设计。如果映射之外没有应用指向某个“键”，则该“键”可以被 GC 回收</li>
+<li>IdentityHashMap：使用“==”代替 <code>equals()</code> 对键进行比较的散列映射，专门为解决特殊问题而设计</li>
+<li>ConcurrentHashMap：线程安全的 <code>Map</code>，属于 <code>java.util.concurrent</code> 并发包中</li>
+</ul>
+<blockquote>
+<p>参考：<a href="https://blog.csdn.net/WZD2012/article/details/73245493?utm_source=blogxgwz5">https://blog.csdn.net/WZD2012/article/details/73245493?utm_source=blogxgwz5</a></p>
+</blockquote>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>技术</category>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>Java 集合</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RPM 介绍及打包总结</title>
+    <url>/posts/22fd6dd2/</url>
+    <content><![CDATA[<p>RPM Package Manager (RPM) 是一个强大的命令行驱动的软件包管理工具，用来安装、卸载、校验、查询和更新 Linux 系统上的软件包。本文简单介绍了一下 RPM，并总结制作了 RPM 包的流程。</p>
+<a id="more"></a>
+
+<h2 id="软件包管理系统和Linux发行版"><a href="#软件包管理系统和Linux发行版" class="headerlink" title="软件包管理系统和Linux发行版"></a>软件包管理系统和Linux发行版</h2><p>软件包管理系统：自动安装、配置、卸载和升级软件包的工具组合。</p>
+<p>Linux 发行版中常见的有：</p>
+<ul>
+<li>RPM(Redhat Package Manager)</li>
+<li>DPKG(Debian Package)</li>
+</ul>
+<p>使用他们的系统被分为两大派系:</p>
+<ul>
+<li>RedHat 系（CentOS、Fedora 等）</li>
+<li>Debian 系（Ubuntu、Deepin 等）</li>
+</ul>
+<h2 id="RPM"><a href="#RPM" class="headerlink" title="RPM"></a>RPM</h2><p>一个 RPM 包包含了已经压缩的软件文件集和相关的软件内容信息，通常表现为以 <code>.rpm</code> 扩展名结尾的文件，如果是源代码包通常以 <code>src.rpm</code> 结尾。</p>
+<h3 id="rpm-包命名"><a href="#rpm-包命名" class="headerlink" title="rpm 包命名"></a>rpm 包命名</h3><p>一般格式为：<code>name-version-release.arch.rpm</code>。</p>
+<ul>
+<li><code>name</code>：安装包的名称。</li>
+<li><code>version</code>：版本信息。</li>
+<li><code>release</code>：发行号、适应系统等。</li>
+<li><code>arch</code>：适用的硬件平台。包括 <code>x86_64</code>、<code>i686</code> 等，<code>noarch</code> 表示能安装在任何平台。</li>
+</ul>
+<p>举例：</p>
+<blockquote>
+<p>nginx-1.16.1-1.el7.x86_64.rpm</p>
+</blockquote>
+<h3 id="rpm-命令"><a href="#rpm-命令" class="headerlink" title="rpm 命令"></a>rpm 命令</h3><p>安装管理 RPM 包需要用到 <code>rpm</code> 命令，常用参数如下：</p>
+<table>
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>-q</code></td>
+<td align="center">查询 rpm 包的信息</td>
+</tr>
+<tr>
+<td align="center"><code>-i</code></td>
+<td align="center">安装 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-U</code></td>
+<td align="center">升级 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-e</code></td>
+<td align="center">卸载 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-h</code></td>
+<td align="center">以 <code>#</code> 显示安装进度</td>
+</tr>
+<tr>
+<td align="center"><code>-v</code></td>
+<td align="center">显示安装详情</td>
+</tr>
+<tr>
+<td align="center"><code>-l</code></td>
+<td align="center">列出安装包中文件</td>
+</tr>
+<tr>
+<td align="center"><code>-p</code></td>
+<td align="center">对 rpm 包进行查询、与其他参数一起使用</td>
+</tr>
+</tbody></table>
+<p>以上参数需要组合使用，举例：</p>
+<p>查看安装包信息</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">rpm -qip nginx-1.16.1-1.el7.x86_64.rpm</span><br></pre></td></tr></tbody></table></figure>
+
+<p>列出安装包中的文件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">rpm -qlp nginx-1.16.1-1.el7.x86_64.rpm</span><br></pre></td></tr></tbody></table></figure>
+
+<p>安装安装包</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">rpm -ivh nginx-1.16.1-1.el7.x86_64.rpm</span><br></pre></td></tr></tbody></table></figure>
+
+<p>查询已安装所有安装包</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">rpm -qa</span><br></pre></td></tr></tbody></table></figure>
+
+<p>卸载安装包</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">rpm -evh nginx-1.16.1-1.el7.x86_64 </span><br><span class="line"><span class="meta">#</span><span class="bash"> 后面跟 rpm 包的全名</span></span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p>补充：</p>
+<ul>
+<li>使用 <code>--nodeps</code> 跳过依赖验证，强制操作。</li>
+<li>rpm默认不允许重复安装和降级安装，可使用 <code>--force</code> 强制安装。</li>
+<li>可使用 <code>-qf</code> 查看某个文件属于哪个rpm包。</li>
+</ul>
+</blockquote>
+<h2 id="YUM"><a href="#YUM" class="headerlink" title="YUM"></a>YUM</h2><p>当一个 rpm 包的安装需要依赖其他包时，就必须先安装依赖包。YUM（Yellowdog Updater, Modified）工具基于 RPM ，可以从指定源空间（服务器、本地目录等）自动下载 rpm 包并处理依赖关系。</p>
+<h3 id="yum-命令"><a href="#yum-命令" class="headerlink" title="yum 命令"></a>yum 命令</h3><p>安装指定软件 :</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum -y install nginx # -y 表示互动时输入 yes</span><br></pre></td></tr></tbody></table></figure>
+
+<p>列出系统中已安装软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum list</span><br></pre></td></tr></tbody></table></figure>
+
+<p>列出系统中可升级的所有软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum check-update</span><br></pre></td></tr></tbody></table></figure>
+
+<p>升级系统中可升级的所有软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum update</span><br></pre></td></tr></tbody></table></figure>
+
+<p>升级指定软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum update nginx</span><br></pre></td></tr></tbody></table></figure>
+
+<p>卸载指定软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum remove nginx</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="repo-文件"><a href="#repo-文件" class="headerlink" title="repo 文件"></a>repo 文件</h3><p>yum 使用仓库保存管理 rpm 包，仓库的配置文件以 <code>.repo</code> 为扩展名，存放在 <code>/etc/yum.repo.d/</code> 目录下。一个配置文件中包含了一个或多个 yum 仓库的配置信息。</p>
+<h3 id="rpm-包下载"><a href="#rpm-包下载" class="headerlink" title="rpm 包下载"></a>rpm 包下载</h3><h4 id="使用-downloadonly"><a href="#使用-downloadonly" class="headerlink" title="使用 --downloadonly"></a>使用 <code>--downloadonly</code></h4><p>没有命令需要先安装 <code>downloadonly</code> 插件：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum install yum-plugin-downloadonly</span><br></pre></td></tr></tbody></table></figure>
+
+<p>下载 rpm 包和依赖：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum install --downloadonly --downloaddir=/home/rpm-share/yum nginx</span><br></pre></td></tr></tbody></table></figure>
+
+<p>默认下载路径：<code>/var/cache/yum/x86_64/[centos/fedora-version]/[repository]/packages</code></p>
+<p>已安装再次下载：<code>reinstall</code>，此时不会下载依赖。</p>
+<h4 id="使用-yumdownloader"><a href="#使用-yumdownloader" class="headerlink" title="使用 yumdownloader"></a>使用 yumdownloader</h4><p>没有命令需要先安装：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yum install -y yum-utils</span><br></pre></td></tr></tbody></table></figure>
+
+<p>下载 rpm 包和依赖：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">yumdownloader --destdir=/home/rpm-share/yum --resolve nginx</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>--destdir</code> 指定下载的软件包存放路径，不指定默认当前路径。<br><code>--resolve</code> 解决依赖关系并下载所需的包。</p>
+<h2 id="rpm-包制作"><a href="#rpm-包制作" class="headerlink" title="rpm 包制作"></a>rpm 包制作</h2><h3 id="spec-基础"><a href="#spec-基础" class="headerlink" title="spec 基础"></a>spec 基础</h3><p>要制作 rpm 包，关键在于编写包的 spec 描述文件。</p>
+<h4 id="关键字"><a href="#关键字" class="headerlink" title="关键字"></a>关键字</h4><ul>
+<li><p><code>Name</code>：软件包的名字，后面可使用 <code>%{name}</code> 的方式引用</p>
+</li>
+<li><p><code>Version</code>：软件版本号，后面可使用 <code>%{version}</code> 引用</p>
+</li>
+<li><p><code>Release</code>：软件包释出号/发行号，后面可使用 <code>%{release}</code> 引用</p>
+</li>
+<li><p><code>Group</code>：软件分组，参见 <code>/usr/share/doc/rpm-4.x.x/GROUPS</code></p>
+</li>
+<li><p><code>License</code>：软件授权方式，通常是 GPL（自由软件）或 GPLv2，BSD</p>
+</li>
+<li><p><code>Summary</code>：软件包的内容概要</p>
+</li>
+<li><p><code>URL</code>：软件的主页</p>
+</li>
+<li><p><code>Packager</code>：打包者的信息</p>
+</li>
+<li><p><code>Vendor</code>：软件开发者的名字，发行商或打包组织的信息，例如 <code>Fedora Project</code></p>
+</li>
+<li><p><code>Source0</code>：源代码包的名称，可以带多个用 <code>Source1</code>、<code>Source2</code> 等源，后面也可以用 <code>%{source1}</code>、<code>%{source2}</code> 引用，如有补丁也写在此处，如：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="code"><pre><span class="line">Source0: %{name}-%{version}.tar.gz</span><br><span class="line">Patch0: some-bugs0.patch                    </span><br><span class="line">Patch1: some-bugs1.patch                   </span><br></pre></td></tr></tbody></table></figure>
+</li>
+<li><p><code>BuildRequires</code>: 制作过程中用到的软件包，构建依赖</p>
+</li>
+<li><p><code>Requires</code>: 安装时所需软件包</p>
+<ul>
+<li><code>Requires(pre/post/preun/postun)</code>: 指定不同阶段的依赖</li>
+</ul>
+</li>
+<li><p><code>BuildRoot</code>: 这个是安装或编译时使用的「虚拟目录」，打包时会用到该目录下文件，可查看安装后文件路径，例如：<code>BuildRoot: %_topdir/BUILDROOT</code>。</p>
+</li>
+<li><p><code>%description</code>：软件包详细说明</p>
+</li>
+</ul>
+<h4 id="主体"><a href="#主体" class="headerlink" title="主体"></a>主体</h4><p>主体包括 %prep，%build，%install，%files，%clean 几个关键阶段。</p>
+<h5 id="prep-阶段"><a href="#prep-阶段" class="headerlink" title="%prep 阶段"></a>%prep 阶段</h5><p>对源代码包进行解压和打补丁，如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">%prep</span><br><span class="line">%setup -q    <span class="comment"># 将 %sourcedir 目录下的源代码解压到 %builddir 目录下</span></span><br><span class="line">%pathch -p1  <span class="comment"># 给源代码打上补丁 Patch0 ， -p1 是忽略 patch 的第一层目录</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="build-阶段"><a href="#build-阶段" class="headerlink" title="%build 阶段"></a>%build 阶段</h5><p>在 <code>%_builddir</code> 目录下执行源码包的编译。一般是执行执行常见的 <code>configure</code> 和 <code>make</code> 操作，如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">%configure                                             <span class="comment"># 执行源代码的 configure 配置</span></span><br><span class="line">make %{?_smp_mflags} OPTIMIZE=<span class="string">"%{optflags}"</span>           <span class="comment"># 多核则并行编译</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="install-阶段"><a href="#install-阶段" class="headerlink" title="%install 阶段"></a>%install 阶段</h5><p>执行 <code>make install</code> 命令操作。开始把软件安装到虚拟的根目录中。这个阶段会在 <code>%buildrootdir</code> 目录里建好目录结构，然后将需要打包到 rpm 软件包里的文件从 <code>%builddir</code> 里拷贝到 <code>%_buildrootdir</code> 里对应的目录里。</p>
+<p>在 <code>~/rpmbuild/BUILD/%{name}-%{version}</code> 目录中进行 <code>make install</code> 的操作。<code>%install</code> 很重要，因为如果这里的路径不对的话，则下面 <code>%file</code> 中寻找文件的时候就会失败。</p>
+<blockquote>
+<p>注意：<br><code>%install</code> 部分使用的是绝对路径，而 <code>%file</code> 部分使用则是相对路径。<br>当用户最终用 <code>rpm -ivh</code> 安装软件包时，这些文件会安装到用户系统中相应的目录里。</p>
+</blockquote>
+<p>如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">%install</span><br><span class="line">rm -rf <span class="variable">$RPM_BUILD_ROOT</span>                         <span class="comment"># 清空下安装目录，实际会自动清除</span></span><br><span class="line">make install DESTDIR=<span class="variable">$RPM_BUILD_ROOT</span>         <span class="comment"># 安装到 buildroot 目录下         </span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>%install</code> 阶段还可以执行相关脚本</p>
+<ul>
+<li><code>%pre</code> 安装前执行的脚本</li>
+<li><code>%post</code> 安装后执行的脚本</li>
+<li><code>%preun</code> 卸载前执行的脚本</li>
+<li><code>%postun</code> 卸载后执行的脚本</li>
+</ul>
+<blockquote>
+<p>注意：<br><code>%preun</code> 在升级的时候会执行，<code>%postun</code> 在升级的时候不会执行。</p>
+</blockquote>
+<h5 id="file-阶段"><a href="#file-阶段" class="headerlink" title="%file 阶段"></a>%file 阶段</h5><p>说明会将 <code>%{buildroot}</code> 目录下的哪些文件和目录最终打包到rpm包里。</p>
+<p>定义软件包所包含的文件，分为三类：</p>
+<ul>
+<li>说明文档（doc）</li>
+<li>配置文件（config）</li>
+<li>执行程序</li>
+</ul>
+<p>在 <code>%files</code> 阶段的第一条命令的语法是：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">%defattr(文件权限,用户名,组名,目录权限) </span><br></pre></td></tr></tbody></table></figure>
+
+<p>还可定义文件存取权限，拥有者及组别。如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">%files</span><br><span class="line">%defattr (-,root,root,0755)                     <span class="comment"># 设定默认权限</span></span><br><span class="line">%config(noreplace) /etc/my.cnf                  <span class="comment"># 表明是配置文件，noplace 表示替换文件</span></span><br><span class="line">%doc %{_mandir}/1.log                           <span class="comment"># 表明这个是文档</span></span><br><span class="line">%attr(755, root, root) %{_sbindir}/mysqld        <span class="comment"># 分别是权限，用户，用户组</span></span><br><span class="line">%exclude %{_mandir}/2.log                      <span class="comment"># 列出不想打包到 rpm 中的文件</span></span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p>注意：</p>
+<ul>
+<li><code>%files</code> 里的文件同时需要在 <code>%install</code> 中安装。</li>
+<li><code>%{buildroot}</code> 里的所有文件都要明确被指定是否要被打包到 rpm 里。</li>
+<li>如果声明了 <code>%{buildroot}</code> 里不存在的文件或者目录也会报错。</li>
+<li><code>%exclude</code> 指定的文件如果不存在会报错。</li>
+</ul>
+</blockquote>
+<h5 id="clean-阶段"><a href="#clean-阶段" class="headerlink" title="%clean 阶段"></a>%clean 阶段</h5><p>编译完成后一些清理工作，主要包括对 <code>%{buildroot}</code> 目录的清空（非必须），如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">make clean</span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="changelog-阶段"><a href="#changelog-阶段" class="headerlink" title="%changelog 阶段"></a>%changelog 阶段</h5><p>主要记录的每次打包时的修改变更日志。标准格式是：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">* date +<span class="string">"%a %b %d %Y"</span> 修改人 邮箱 本次版本 x.y.z-p </span><br><span class="line">- 本次变更修改了那些内容</span><br></pre></td></tr></tbody></table></figure>
+
+<h4 id="宏"><a href="#宏" class="headerlink" title="宏"></a>宏</h4><h5 id="内建宏"><a href="#内建宏" class="headerlink" title="内建宏"></a>内建宏</h5><p>spec 文件中在定义文件的安装路径时通常会使用 RPM 内建的宏定义，可以在 <code>/usr/lib/rpm/macros</code> 找到，附录一些常见的宏：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="code"><pre><span class="line">%{_sysconfdir}        /etc</span><br><span class="line">%{_prefix}            /usr</span><br><span class="line">%{_exec_prefix}       %{_prefix}</span><br><span class="line">%{_bindir}            %{_exec_prefix}/bin</span><br><span class="line">%{_lib}               lib (lib64 on 64bit systems)</span><br><span class="line">%{_libdir}            %{_exec_prefix}/%{_lib}</span><br><span class="line">%{_libexecdir}        %{_exec_prefix}/libexec</span><br><span class="line">%{_sbindir}           %{_exec_prefix}/sbin</span><br><span class="line">%{_sharedstatedir}    /var/lib</span><br><span class="line">%{_datadir}           %{_prefix}/share</span><br><span class="line">%{_includedir}        %{_prefix}/include</span><br><span class="line">%{_oldincludedir}     /usr/include</span><br><span class="line">%{_infodir}           /usr/share/info</span><br><span class="line">%{_mandir}            /usr/share/man</span><br><span class="line">%{_localstatedir}     /var</span><br><span class="line">%{_initddir}          %{_sysconfdir}/rc.d/init.d </span><br><span class="line">%{_topdir}            %{getenv:HOME}/rpmbuild</span><br><span class="line">%{_builddir}          %{_topdir}/BUILD</span><br><span class="line">%{_rpmdir}            %{_topdir}/RPMS</span><br><span class="line">%{_sourcedir}         %{_topdir}/SOURCES</span><br><span class="line">%{_specdir}           %{_topdir}/SPECS</span><br><span class="line">%{_srcrpmdir}         %{_topdir}/SRPMS</span><br><span class="line">%{_buildrootdir}      %{_topdir}/BUILDROOT</span><br><span class="line">%{_var}               /var</span><br><span class="line">%{_tmppath}           %{_var}/tmp</span><br><span class="line">%{_usr}               /usr</span><br><span class="line">%{_usrsrc}            %{_usr}/src</span><br><span class="line">%{_docdir}            %{_datadir}/doc</span><br><span class="line">%{buildroot}          %{_buildrootdir}/%{name}-%{version}-%{release}.%{_arch}</span><br><span class="line">$RPM_BUILD_ROOT       %{buildroot}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>通过命令 <code>rpm --eval "%{宏名称}"</code> 来查看具体对应路径，如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">rpm --<span class="built_in">eval</span> <span class="string">"%{_topdir}"</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="自定义宏"><a href="#自定义宏" class="headerlink" title="自定义宏"></a>自定义宏</h5><p>使用 <code>%define</code> 可自定义宏变量。</p>
+<blockquote>
+<p>注意：<br>打包时会对所有安装的文件进行 <code>strip</code> 操作，去除调试信息等。<code>strip</code> 操作定义在宏 <code>__os_install_post</code> 中，可通过 <code>rpmbuild --showrc</code> 查看，将其设为 <code>%{nil}</code> 可跳过 <code>strip</code> 操作。即：<code>%define __os_install_post %{nil}</code></p>
+</blockquote>
+<h3 id="rpmbuild-打包"><a href="#rpmbuild-打包" class="headerlink" title="rpmbuild 打包"></a>rpmbuild 打包</h3><p>使用 <code>rpmbuild</code> 制作rpm包，<code>rpmbuid</code> 的默认工作路径是 <code>$HOME/rpmbuild</code>，并且推荐用户在制作 rpm 软件包时尽量不要以 root 身份进行操作。</p>
+<h4 id="打包目录"><a href="#打包目录" class="headerlink" title="打包目录"></a>打包目录</h4><p>构建打包目录，一般在 <code>~/rpmbuild</code> 目录下建立以下目录：</p>
+<ul>
+<li><code>SPEC</code></li>
+<li><code>SOURCE</code> </li>
+<li><code>BUILD</code></li>
+<li><code>RPM</code></li>
+<li><code>SRPM</code></li>
+<li><code>BUILDROOT</code></li>
+</ul>
+<p>对应关系：</p>
+<table>
+<thead>
+<tr>
+<th>默认位置</th>
+<th>宏</th>
+<th>名称</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>~/rpmbuild/SPECS</td>
+<td>%_specdir</td>
+<td>spec 文件目录</td>
+<td>保存 RPM 包配置（.spec）文件</td>
+</tr>
+<tr>
+<td>~/rpmbuild/SOURCES</td>
+<td>%_sourcedir</td>
+<td>源代码目录</td>
+<td>保存源码包（如 .tar 包）和所有 patch 补丁</td>
+</tr>
+<tr>
+<td>~/rpmbuild/BUILD</td>
+<td>%_builddir</td>
+<td>构建目录</td>
+<td>源码包被解压至此，并在该目录的子目录完成编译</td>
+</tr>
+<tr>
+<td>~/rpmbuild/RPMS</td>
+<td>%_rpmdir</td>
+<td>标准 RPM 包目录</td>
+<td>生成/保存二进制 RPM 包</td>
+</tr>
+<tr>
+<td>~/rpmbuild/SRPMS</td>
+<td>%_srcrpmdir</td>
+<td>源代码 RPM 包目录</td>
+<td>生成/保存源码 RPM 包（SRPM）</td>
+</tr>
+<tr>
+<td>~/rpmbuild/BUILDROOT</td>
+<td>%_buildrootdir</td>
+<td>最终安装目录</td>
+<td>保存 <code>%install</code> 阶段安装的文件</td>
+</tr>
+</tbody></table>
+<h4 id="打包命令"><a href="#打包命令" class="headerlink" title="打包命令"></a>打包命令</h4><p>切换到 <code>rpmbuild/SPECS</code> 目录下执行打包编译命令，如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">rpmbuild -ba 软件名-版本.spec </span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>rpmbuild</code>命令参数：</p>
+<table>
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>-bp</code></td>
+<td align="center">只解压源码及应用补丁</td>
+</tr>
+<tr>
+<td align="center"><code>-bc</code></td>
+<td align="center">只进行编译</td>
+</tr>
+<tr>
+<td align="center"><code>-bi</code></td>
+<td align="center">只进行安装到 <code>%{buildroot}</code></td>
+</tr>
+<tr>
+<td align="center"><code>-bb</code></td>
+<td align="center">只生成二进制 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-bs</code></td>
+<td align="center">只生成源码 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-ba</code></td>
+<td align="center">生成二进制 rpm 包和源码 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>--target</code></td>
+<td align="center">指定生成 rpm 包的平台</td>
+</tr>
+</tbody></table>
+<h4 id="修改默认工作路径"><a href="#修改默认工作路径" class="headerlink" title="修改默认工作路径"></a>修改默认工作路径</h4><p><code>rpmbuild</code> 默认工作路径通常由 <code>%_topdir</code> 的宏变量来定义。如果想更改有以下方法：</p>
+<h5 id="修改-rpmmacros-的隐藏文件"><a href="#修改-rpmmacros-的隐藏文件" class="headerlink" title="修改 .rpmmacros 的隐藏文件"></a>修改 <code>.rpmmacros</code> 的隐藏文件</h5><p>在 <code>root</code> 下建立一个名为 <code>.rpmmacros</code> 的隐藏文件，然后在里面重新定义 <code>%_topdir</code>，指向一个新的目录名。<code>.rpmmacros</code> 文件内容如下：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">%_topdir %(<span class="built_in">echo</span> <span class="variable">$HOME</span>)/rpmbuild</span><br><span class="line"></span><br><span class="line">%_smp_mflags %( \</span><br><span class="line">    [ -z <span class="string">"<span class="variable">$RPM_BUILD_NCPUS</span>"</span> ] \\\</span><br><span class="line">        &amp;&amp; RPM_BUILD_NCPUS=<span class="string">"`/usr/bin/nproc 2&gt;/dev/null || \\\</span></span><br><span class="line"><span class="string">                             /usr/bin/getconf _NPROCESSORS_ONLN`"</span>; \\\</span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">"<span class="variable">$RPM_BUILD_NCPUS</span>"</span> -gt 16 ]; <span class="keyword">then</span> \\\</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"-j16"</span>; \\\</span><br><span class="line">    <span class="keyword">elif</span> [ <span class="string">"<span class="variable">$RPM_BUILD_NCPUS</span>"</span> -gt 3 ]; <span class="keyword">then</span> \\\</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"-j<span class="variable">$RPM_BUILD_NCPUS</span>"</span>; \\\</span><br><span class="line">    <span class="keyword">else</span> \\\</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"-j3"</span>; \\\</span><br><span class="line">    <span class="keyword">fi</span> )</span><br><span class="line">    </span><br><span class="line">%__arch_install_post \</span><br><span class="line">    [ <span class="string">"%{buildarch}"</span> = <span class="string">"noarch"</span> ] || QA_CHECK_RPATHS=1 ; \</span><br><span class="line">    <span class="keyword">case</span> <span class="string">"<span class="variable">${QA_CHECK_RPATHS:-}</span>"</span> <span class="keyword">in</span> [1yY]*) /usr/lib/rpm/check-rpaths ;; <span class="keyword">esac</span> \</span><br><span class="line">    /usr/lib/rpm/check-buildroot</span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="使用-rpmbuild-命令时定义"><a href="#使用-rpmbuild-命令时定义" class="headerlink" title="使用 rpmbuild 命令时定义"></a>使用 <code>rpmbuild</code> 命令时定义</h5><p>使用 <code>rpmbuild</code> 时覆盖 <code>%_topdir</code> 的宏变量定义来指定此次打包的工作路径：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="code"><pre><span class="line">rpmbuild --define <span class="string">"_topdir <span class="variable">${dir:-新的目录}</span>"</span> -ba 软件名-版本.spec </span><br></pre></td></tr></tbody></table></figure>
+
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>RPM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Hello World</title>
+    <url>/posts/4a17b156/</url>
+    <content><![CDATA[<p>Welcome to <a href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
+<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tbody><tr><td class="code"><pre><span class="line">$ hexo new <span class="string">"My New Post"</span></span><br></pre></td></tr></tbody></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/writing.html">Writing</a></p>
+<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tbody><tr><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></tbody></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/server.html">Server</a></p>
+<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tbody><tr><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></tbody></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/generating.html">Generating</a></p>
+<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tbody><tr><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></tbody></table></figure>
+
+<p>More info: <a href="https://hexo.io/docs/one-command-deployment.html">Deployment</a></p>
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>]]></content>
+  </entry>
+</search>

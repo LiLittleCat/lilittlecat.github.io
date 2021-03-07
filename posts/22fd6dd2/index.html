@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.0.0">
+
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/favicon/butterfly/apple-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/favicon/butterfly/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/favicon/butterfly/favicon-16x16.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@5.15.2/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.1.1/animate.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.css">
+
+<script class="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","images":"/images","scheme":"Gemini","version":"8.2.2","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":true,"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}};
+  </script>
+<meta name="description" content="RPM Package Manager (RPM) 是一个强大的命令行驱动的软件包管理工具，用来安装、卸载、校验、查询和更新 Linux 系统上的软件包。本文简单介绍了一下 RPM，并总结制作了 RPM 包的流程。">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RPM 介绍及打包总结">
+<meta property="og:url" content="http://yoursite.com/posts/22fd6dd2/index.html">
+<meta property="og:site_name" content="狸小猫的小窝">
+<meta property="og:description" content="RPM Package Manager (RPM) 是一个强大的命令行驱动的软件包管理工具，用来安装、卸载、校验、查询和更新 Linux 系统上的软件包。本文简单介绍了一下 RPM，并总结制作了 RPM 包的流程。">
+<meta property="og:locale" content="zh_CN">
+<meta property="article:published_time" content="2020-08-06T08:18:03.000Z">
+<meta property="article:modified_time" content="2021-03-07T14:39:54.462Z">
+<meta property="article:author" content="LiLittleCat">
+<meta property="article:tag" content="RPM">
+<meta name="twitter:card" content="summary">
+
+
+<link rel="canonical" href="http://yoursite.com/posts/22fd6dd2/">
+
+
+<script data-pjax class="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-CN'
+  };
+</script>
+<title>RPM 介绍及打包总结 | 狸小猫的小窝</title>
+  
+
+
+
+
+  <noscript>
+  <style>
+  body { margin-top: 2rem; }
+
+  .use-motion .menu-item,
+  .use-motion .sidebar,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header {
+    visibility: visible;
+  }
+
+  .use-motion .header,
+  .use-motion .site-brand-container .toggle,
+  .use-motion .footer { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle,
+  .use-motion .custom-logo-image {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line {
+    transform: scaleX(1);
+  }
+
+  .search-pop-overlay, .sidebar-nav { display: none; }
+  .sidebar-panel { display: block; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" class="use-motion">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <h1 class="site-title">狸小猫的小窝</h1>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu">
+        <li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>首页</a></li>
+        <li class="menu-item menu-item-about"><a href="/about/" rel="section"><i class="fa fa-user fa-fw"></i>关于</a></li>
+        <li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="fa fa-tags fa-fw"></i>标签</a></li>
+        <li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="fa fa-th fa-fw"></i>分类</a></li>
+        <li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>归档</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E8%BD%AF%E4%BB%B6%E5%8C%85%E7%AE%A1%E7%90%86%E7%B3%BB%E7%BB%9F%E5%92%8CLinux%E5%8F%91%E8%A1%8C%E7%89%88"><span class="nav-number">1.</span> <span class="nav-text">软件包管理系统和Linux发行版</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#RPM"><span class="nav-number">2.</span> <span class="nav-text">RPM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#rpm-%E5%8C%85%E5%91%BD%E5%90%8D"><span class="nav-number">2.1.</span> <span class="nav-text">rpm 包命名</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rpm-%E5%91%BD%E4%BB%A4"><span class="nav-number">2.2.</span> <span class="nav-text">rpm 命令</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#YUM"><span class="nav-number">3.</span> <span class="nav-text">YUM</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#yum-%E5%91%BD%E4%BB%A4"><span class="nav-number">3.1.</span> <span class="nav-text">yum 命令</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#repo-%E6%96%87%E4%BB%B6"><span class="nav-number">3.2.</span> <span class="nav-text">repo 文件</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rpm-%E5%8C%85%E4%B8%8B%E8%BD%BD"><span class="nav-number">3.3.</span> <span class="nav-text">rpm 包下载</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-downloadonly"><span class="nav-number">3.3.1.</span> <span class="nav-text">使用 --downloadonly</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-yumdownloader"><span class="nav-number">3.3.2.</span> <span class="nav-text">使用 yumdownloader</span></a></li></ol></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#rpm-%E5%8C%85%E5%88%B6%E4%BD%9C"><span class="nav-number">4.</span> <span class="nav-text">rpm 包制作</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#spec-%E5%9F%BA%E7%A1%80"><span class="nav-number">4.1.</span> <span class="nav-text">spec 基础</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E9%94%AE%E5%AD%97"><span class="nav-number">4.1.1.</span> <span class="nav-text">关键字</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%B8%BB%E4%BD%93"><span class="nav-number">4.1.2.</span> <span class="nav-text">主体</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#prep-%E9%98%B6%E6%AE%B5"><span class="nav-number">4.1.2.1.</span> <span class="nav-text">%prep 阶段</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#build-%E9%98%B6%E6%AE%B5"><span class="nav-number">4.1.2.2.</span> <span class="nav-text">%build 阶段</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#install-%E9%98%B6%E6%AE%B5"><span class="nav-number">4.1.2.3.</span> <span class="nav-text">%install 阶段</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#file-%E9%98%B6%E6%AE%B5"><span class="nav-number">4.1.2.4.</span> <span class="nav-text">%file 阶段</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#clean-%E9%98%B6%E6%AE%B5"><span class="nav-number">4.1.2.5.</span> <span class="nav-text">%clean 阶段</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#changelog-%E9%98%B6%E6%AE%B5"><span class="nav-number">4.1.2.6.</span> <span class="nav-text">%changelog 阶段</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AE%8F"><span class="nav-number">4.1.3.</span> <span class="nav-text">宏</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%86%85%E5%BB%BA%E5%AE%8F"><span class="nav-number">4.1.3.1.</span> <span class="nav-text">内建宏</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E8%87%AA%E5%AE%9A%E4%B9%89%E5%AE%8F"><span class="nav-number">4.1.3.2.</span> <span class="nav-text">自定义宏</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#rpmbuild-%E6%89%93%E5%8C%85"><span class="nav-number">4.2.</span> <span class="nav-text">rpmbuild 打包</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%89%93%E5%8C%85%E7%9B%AE%E5%BD%95"><span class="nav-number">4.2.1.</span> <span class="nav-text">打包目录</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%89%93%E5%8C%85%E5%91%BD%E4%BB%A4"><span class="nav-number">4.2.2.</span> <span class="nav-text">打包命令</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9%E9%BB%98%E8%AE%A4%E5%B7%A5%E4%BD%9C%E8%B7%AF%E5%BE%84"><span class="nav-number">4.2.3.</span> <span class="nav-text">修改默认工作路径</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BF%AE%E6%94%B9-rpmmacros-%E7%9A%84%E9%9A%90%E8%97%8F%E6%96%87%E4%BB%B6"><span class="nav-number">4.2.3.1.</span> <span class="nav-text">修改 .rpmmacros 的隐藏文件</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%BD%BF%E7%94%A8-rpmbuild-%E5%91%BD%E4%BB%A4%E6%97%B6%E5%AE%9A%E4%B9%89"><span class="nav-number">4.2.3.2.</span> <span class="nav-text">使用 rpmbuild 命令时定义</span></a></li></ol></li></ol></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="LiLittleCat"
+      src="/images/LiLittleCat.png">
+  <p class="site-author-name" itemprop="name">LiLittleCat</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">4</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+          
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+          
+        <span class="site-state-item-count">4</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://github.com/yourname" title="GitHub → https:&#x2F;&#x2F;github.com&#x2F;yourname" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i></a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="mailto:yourname@gmail.com" title="E-Mail → mailto:yourname@gmail.com" rel="noopener" target="_blank"><i class="fa fa-envelope fa-fw"></i></a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="back-to-top" role="button">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/posts/22fd6dd2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/LiLittleCat.png">
+      <meta itemprop="name" content="LiLittleCat">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="狸小猫的小窝">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          RPM 介绍及打包总结
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2020-08-06 16:18:03" itemprop="dateCreated datePublished" datetime="2020-08-06T16:18:03+08:00">2020-08-06</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+        </span>
+    </span>
+
+  
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>RPM Package Manager (RPM) 是一个强大的命令行驱动的软件包管理工具，用来安装、卸载、校验、查询和更新 Linux 系统上的软件包。本文简单介绍了一下 RPM，并总结制作了 RPM 包的流程。</p>
+<a id="more"></a>
+
+<h2 id="软件包管理系统和Linux发行版"><a href="#软件包管理系统和Linux发行版" class="headerlink" title="软件包管理系统和Linux发行版"></a>软件包管理系统和Linux发行版</h2><p>软件包管理系统：自动安装、配置、卸载和升级软件包的工具组合。</p>
+<p>Linux 发行版中常见的有：</p>
+<ul>
+<li>RPM(Redhat Package Manager)</li>
+<li>DPKG(Debian Package)</li>
+</ul>
+<p>使用他们的系统被分为两大派系:</p>
+<ul>
+<li>RedHat 系（CentOS、Fedora 等）</li>
+<li>Debian 系（Ubuntu、Deepin 等）</li>
+</ul>
+<h2 id="RPM"><a href="#RPM" class="headerlink" title="RPM"></a>RPM</h2><p>一个 RPM 包包含了已经压缩的软件文件集和相关的软件内容信息，通常表现为以 <code>.rpm</code> 扩展名结尾的文件，如果是源代码包通常以 <code>src.rpm</code> 结尾。</p>
+<h3 id="rpm-包命名"><a href="#rpm-包命名" class="headerlink" title="rpm 包命名"></a>rpm 包命名</h3><p>一般格式为：<code>name-version-release.arch.rpm</code>。</p>
+<ul>
+<li><code>name</code>：安装包的名称。</li>
+<li><code>version</code>：版本信息。</li>
+<li><code>release</code>：发行号、适应系统等。</li>
+<li><code>arch</code>：适用的硬件平台。包括 <code>x86_64</code>、<code>i686</code> 等，<code>noarch</code> 表示能安装在任何平台。</li>
+</ul>
+<p>举例：</p>
+<blockquote>
+<p>nginx-1.16.1-1.el7.x86_64.rpm</p>
+</blockquote>
+<h3 id="rpm-命令"><a href="#rpm-命令" class="headerlink" title="rpm 命令"></a>rpm 命令</h3><p>安装管理 RPM 包需要用到 <code>rpm</code> 命令，常用参数如下：</p>
+<table>
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>-q</code></td>
+<td align="center">查询 rpm 包的信息</td>
+</tr>
+<tr>
+<td align="center"><code>-i</code></td>
+<td align="center">安装 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-U</code></td>
+<td align="center">升级 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-e</code></td>
+<td align="center">卸载 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-h</code></td>
+<td align="center">以 <code>#</code> 显示安装进度</td>
+</tr>
+<tr>
+<td align="center"><code>-v</code></td>
+<td align="center">显示安装详情</td>
+</tr>
+<tr>
+<td align="center"><code>-l</code></td>
+<td align="center">列出安装包中文件</td>
+</tr>
+<tr>
+<td align="center"><code>-p</code></td>
+<td align="center">对 rpm 包进行查询、与其他参数一起使用</td>
+</tr>
+</tbody></table>
+<p>以上参数需要组合使用，举例：</p>
+<p>查看安装包信息</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpm -qip nginx-1.16.1-1.el7.x86_64.rpm</span><br></pre></td></tr></tbody></table></figure>
+
+<p>列出安装包中的文件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpm -qlp nginx-1.16.1-1.el7.x86_64.rpm</span><br></pre></td></tr></tbody></table></figure>
+
+<p>安装安装包</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpm -ivh nginx-1.16.1-1.el7.x86_64.rpm</span><br></pre></td></tr></tbody></table></figure>
+
+<p>查询已安装所有安装包</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpm -qa</span><br></pre></td></tr></tbody></table></figure>
+
+<p>卸载安装包</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">rpm -evh nginx-1.16.1-1.el7.x86_64 </span><br><span class="line"><span class="meta">#</span><span class="bash"> 后面跟 rpm 包的全名</span></span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p>补充：</p>
+<ul>
+<li>使用 <code>--nodeps</code> 跳过依赖验证，强制操作。</li>
+<li>rpm默认不允许重复安装和降级安装，可使用 <code>--force</code> 强制安装。</li>
+<li>可使用 <code>-qf</code> 查看某个文件属于哪个rpm包。</li>
+</ul>
+</blockquote>
+<h2 id="YUM"><a href="#YUM" class="headerlink" title="YUM"></a>YUM</h2><p>当一个 rpm 包的安装需要依赖其他包时，就必须先安装依赖包。YUM（Yellowdog Updater, Modified）工具基于 RPM ，可以从指定源空间（服务器、本地目录等）自动下载 rpm 包并处理依赖关系。</p>
+<h3 id="yum-命令"><a href="#yum-命令" class="headerlink" title="yum 命令"></a>yum 命令</h3><p>安装指定软件 :</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum -y install nginx # -y 表示互动时输入 yes</span><br></pre></td></tr></tbody></table></figure>
+
+<p>列出系统中已安装软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum list</span><br></pre></td></tr></tbody></table></figure>
+
+<p>列出系统中可升级的所有软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum check-update</span><br></pre></td></tr></tbody></table></figure>
+
+<p>升级系统中可升级的所有软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum update</span><br></pre></td></tr></tbody></table></figure>
+
+<p>升级指定软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum update nginx</span><br></pre></td></tr></tbody></table></figure>
+
+<p>卸载指定软件</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum remove nginx</span><br></pre></td></tr></tbody></table></figure>
+
+<h3 id="repo-文件"><a href="#repo-文件" class="headerlink" title="repo 文件"></a>repo 文件</h3><p>yum 使用仓库保存管理 rpm 包，仓库的配置文件以 <code>.repo</code> 为扩展名，存放在 <code>/etc/yum.repo.d/</code> 目录下。一个配置文件中包含了一个或多个 yum 仓库的配置信息。</p>
+<h3 id="rpm-包下载"><a href="#rpm-包下载" class="headerlink" title="rpm 包下载"></a>rpm 包下载</h3><h4 id="使用-downloadonly"><a href="#使用-downloadonly" class="headerlink" title="使用 --downloadonly"></a>使用 <code>--downloadonly</code></h4><p>没有命令需要先安装 <code>downloadonly</code> 插件：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install yum-plugin-downloadonly</span><br></pre></td></tr></tbody></table></figure>
+
+<p>下载 rpm 包和依赖：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install --downloadonly --downloaddir=/home/rpm-share/yum nginx</span><br></pre></td></tr></tbody></table></figure>
+
+<p>默认下载路径：<code>/var/cache/yum/x86_64/[centos/fedora-version]/[repository]/packages</code></p>
+<p>已安装再次下载：<code>reinstall</code>，此时不会下载依赖。</p>
+<h4 id="使用-yumdownloader"><a href="#使用-yumdownloader" class="headerlink" title="使用 yumdownloader"></a>使用 yumdownloader</h4><p>没有命令需要先安装：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yum install -y yum-utils</span><br></pre></td></tr></tbody></table></figure>
+
+<p>下载 rpm 包和依赖：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">yumdownloader --destdir=/home/rpm-share/yum --resolve nginx</span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>--destdir</code> 指定下载的软件包存放路径，不指定默认当前路径。<br><code>--resolve</code> 解决依赖关系并下载所需的包。</p>
+<h2 id="rpm-包制作"><a href="#rpm-包制作" class="headerlink" title="rpm 包制作"></a>rpm 包制作</h2><h3 id="spec-基础"><a href="#spec-基础" class="headerlink" title="spec 基础"></a>spec 基础</h3><p>要制作 rpm 包，关键在于编写包的 spec 描述文件。</p>
+<h4 id="关键字"><a href="#关键字" class="headerlink" title="关键字"></a>关键字</h4><ul>
+<li><p><code>Name</code>：软件包的名字，后面可使用 <code>%{name}</code> 的方式引用</p>
+</li>
+<li><p><code>Version</code>：软件版本号，后面可使用 <code>%{version}</code> 引用</p>
+</li>
+<li><p><code>Release</code>：软件包释出号/发行号，后面可使用 <code>%{release}</code> 引用</p>
+</li>
+<li><p><code>Group</code>：软件分组，参见 <code>/usr/share/doc/rpm-4.x.x/GROUPS</code></p>
+</li>
+<li><p><code>License</code>：软件授权方式，通常是 GPL（自由软件）或 GPLv2，BSD</p>
+</li>
+<li><p><code>Summary</code>：软件包的内容概要</p>
+</li>
+<li><p><code>URL</code>：软件的主页</p>
+</li>
+<li><p><code>Packager</code>：打包者的信息</p>
+</li>
+<li><p><code>Vendor</code>：软件开发者的名字，发行商或打包组织的信息，例如 <code>Fedora Project</code></p>
+</li>
+<li><p><code>Source0</code>：源代码包的名称，可以带多个用 <code>Source1</code>、<code>Source2</code> 等源，后面也可以用 <code>%{source1}</code>、<code>%{source2}</code> 引用，如有补丁也写在此处，如：</p>
+<figure class="highlight shell"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Source0: %{name}-%{version}.tar.gz</span><br><span class="line">Patch0: some-bugs0.patch                    </span><br><span class="line">Patch1: some-bugs1.patch                   </span><br></pre></td></tr></tbody></table></figure>
+</li>
+<li><p><code>BuildRequires</code>: 制作过程中用到的软件包，构建依赖</p>
+</li>
+<li><p><code>Requires</code>: 安装时所需软件包</p>
+<ul>
+<li><code>Requires(pre/post/preun/postun)</code>: 指定不同阶段的依赖</li>
+</ul>
+</li>
+<li><p><code>BuildRoot</code>: 这个是安装或编译时使用的「虚拟目录」，打包时会用到该目录下文件，可查看安装后文件路径，例如：<code>BuildRoot: %_topdir/BUILDROOT</code>。</p>
+</li>
+<li><p><code>%description</code>：软件包详细说明</p>
+</li>
+</ul>
+<h4 id="主体"><a href="#主体" class="headerlink" title="主体"></a>主体</h4><p>主体包括 %prep，%build，%install，%files，%clean 几个关键阶段。</p>
+<h5 id="prep-阶段"><a href="#prep-阶段" class="headerlink" title="%prep 阶段"></a>%prep 阶段</h5><p>对源代码包进行解压和打补丁，如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">%prep</span><br><span class="line">%setup -q    <span class="comment"># 将 %sourcedir 目录下的源代码解压到 %builddir 目录下</span></span><br><span class="line">%pathch -p1  <span class="comment"># 给源代码打上补丁 Patch0 ， -p1 是忽略 patch 的第一层目录</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="build-阶段"><a href="#build-阶段" class="headerlink" title="%build 阶段"></a>%build 阶段</h5><p>在 <code>%_builddir</code> 目录下执行源码包的编译。一般是执行执行常见的 <code>configure</code> 和 <code>make</code> 操作，如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">%configure                                             <span class="comment"># 执行源代码的 configure 配置</span></span><br><span class="line">make %{?_smp_mflags} OPTIMIZE=<span class="string">"%{optflags}"</span>           <span class="comment"># 多核则并行编译</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="install-阶段"><a href="#install-阶段" class="headerlink" title="%install 阶段"></a>%install 阶段</h5><p>执行 <code>make install</code> 命令操作。开始把软件安装到虚拟的根目录中。这个阶段会在 <code>%buildrootdir</code> 目录里建好目录结构，然后将需要打包到 rpm 软件包里的文件从 <code>%builddir</code> 里拷贝到 <code>%_buildrootdir</code> 里对应的目录里。</p>
+<p>在 <code>~/rpmbuild/BUILD/%{name}-%{version}</code> 目录中进行 <code>make install</code> 的操作。<code>%install</code> 很重要，因为如果这里的路径不对的话，则下面 <code>%file</code> 中寻找文件的时候就会失败。</p>
+<blockquote>
+<p>注意：<br><code>%install</code> 部分使用的是绝对路径，而 <code>%file</code> 部分使用则是相对路径。<br>当用户最终用 <code>rpm -ivh</code> 安装软件包时，这些文件会安装到用户系统中相应的目录里。</p>
+</blockquote>
+<p>如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">%install</span><br><span class="line">rm -rf <span class="variable">$RPM_BUILD_ROOT</span>                         <span class="comment"># 清空下安装目录，实际会自动清除</span></span><br><span class="line">make install DESTDIR=<span class="variable">$RPM_BUILD_ROOT</span>         <span class="comment"># 安装到 buildroot 目录下         </span></span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>%install</code> 阶段还可以执行相关脚本</p>
+<ul>
+<li><code>%pre</code> 安装前执行的脚本</li>
+<li><code>%post</code> 安装后执行的脚本</li>
+<li><code>%preun</code> 卸载前执行的脚本</li>
+<li><code>%postun</code> 卸载后执行的脚本</li>
+</ul>
+<blockquote>
+<p>注意：<br><code>%preun</code> 在升级的时候会执行，<code>%postun</code> 在升级的时候不会执行。</p>
+</blockquote>
+<h5 id="file-阶段"><a href="#file-阶段" class="headerlink" title="%file 阶段"></a>%file 阶段</h5><p>说明会将 <code>%{buildroot}</code> 目录下的哪些文件和目录最终打包到rpm包里。</p>
+<p>定义软件包所包含的文件，分为三类：</p>
+<ul>
+<li>说明文档（doc）</li>
+<li>配置文件（config）</li>
+<li>执行程序</li>
+</ul>
+<p>在 <code>%files</code> 阶段的第一条命令的语法是：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">%defattr(文件权限,用户名,组名,目录权限) </span><br></pre></td></tr></tbody></table></figure>
+
+<p>还可定义文件存取权限，拥有者及组别。如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">%files</span><br><span class="line">%defattr (-,root,root,0755)                     <span class="comment"># 设定默认权限</span></span><br><span class="line">%config(noreplace) /etc/my.cnf                  <span class="comment"># 表明是配置文件，noplace 表示替换文件</span></span><br><span class="line">%doc %{_mandir}/1.log                           <span class="comment"># 表明这个是文档</span></span><br><span class="line">%attr(755, root, root) %{_sbindir}/mysqld        <span class="comment"># 分别是权限，用户，用户组</span></span><br><span class="line">%exclude %{_mandir}/2.log                      <span class="comment"># 列出不想打包到 rpm 中的文件</span></span><br></pre></td></tr></tbody></table></figure>
+
+<blockquote>
+<p>注意：</p>
+<ul>
+<li><code>%files</code> 里的文件同时需要在 <code>%install</code> 中安装。</li>
+<li><code>%{buildroot}</code> 里的所有文件都要明确被指定是否要被打包到 rpm 里。</li>
+<li>如果声明了 <code>%{buildroot}</code> 里不存在的文件或者目录也会报错。</li>
+<li><code>%exclude</code> 指定的文件如果不存在会报错。</li>
+</ul>
+</blockquote>
+<h5 id="clean-阶段"><a href="#clean-阶段" class="headerlink" title="%clean 阶段"></a>%clean 阶段</h5><p>编译完成后一些清理工作，主要包括对 <code>%{buildroot}</code> 目录的清空（非必须），如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">make clean</span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="changelog-阶段"><a href="#changelog-阶段" class="headerlink" title="%changelog 阶段"></a>%changelog 阶段</h5><p>主要记录的每次打包时的修改变更日志。标准格式是：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">* date +<span class="string">"%a %b %d %Y"</span> 修改人 邮箱 本次版本 x.y.z-p </span><br><span class="line">- 本次变更修改了那些内容</span><br></pre></td></tr></tbody></table></figure>
+
+<h4 id="宏"><a href="#宏" class="headerlink" title="宏"></a>宏</h4><h5 id="内建宏"><a href="#内建宏" class="headerlink" title="内建宏"></a>内建宏</h5><p>spec 文件中在定义文件的安装路径时通常会使用 RPM 内建的宏定义，可以在 <code>/usr/lib/rpm/macros</code> 找到，附录一些常见的宏：</p>
+<figure class="highlight plain"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">%{_sysconfdir}        /etc</span><br><span class="line">%{_prefix}            /usr</span><br><span class="line">%{_exec_prefix}       %{_prefix}</span><br><span class="line">%{_bindir}            %{_exec_prefix}/bin</span><br><span class="line">%{_lib}               lib (lib64 on 64bit systems)</span><br><span class="line">%{_libdir}            %{_exec_prefix}/%{_lib}</span><br><span class="line">%{_libexecdir}        %{_exec_prefix}/libexec</span><br><span class="line">%{_sbindir}           %{_exec_prefix}/sbin</span><br><span class="line">%{_sharedstatedir}    /var/lib</span><br><span class="line">%{_datadir}           %{_prefix}/share</span><br><span class="line">%{_includedir}        %{_prefix}/include</span><br><span class="line">%{_oldincludedir}     /usr/include</span><br><span class="line">%{_infodir}           /usr/share/info</span><br><span class="line">%{_mandir}            /usr/share/man</span><br><span class="line">%{_localstatedir}     /var</span><br><span class="line">%{_initddir}          %{_sysconfdir}/rc.d/init.d </span><br><span class="line">%{_topdir}            %{getenv:HOME}/rpmbuild</span><br><span class="line">%{_builddir}          %{_topdir}/BUILD</span><br><span class="line">%{_rpmdir}            %{_topdir}/RPMS</span><br><span class="line">%{_sourcedir}         %{_topdir}/SOURCES</span><br><span class="line">%{_specdir}           %{_topdir}/SPECS</span><br><span class="line">%{_srcrpmdir}         %{_topdir}/SRPMS</span><br><span class="line">%{_buildrootdir}      %{_topdir}/BUILDROOT</span><br><span class="line">%{_var}               /var</span><br><span class="line">%{_tmppath}           %{_var}/tmp</span><br><span class="line">%{_usr}               /usr</span><br><span class="line">%{_usrsrc}            %{_usr}/src</span><br><span class="line">%{_docdir}            %{_datadir}/doc</span><br><span class="line">%{buildroot}          %{_buildrootdir}/%{name}-%{version}-%{release}.%{_arch}</span><br><span class="line">$RPM_BUILD_ROOT       %{buildroot}</span><br></pre></td></tr></tbody></table></figure>
+
+<p>通过命令 <code>rpm --eval "%{宏名称}"</code> 来查看具体对应路径，如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpm --<span class="built_in">eval</span> <span class="string">"%{_topdir}"</span></span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="自定义宏"><a href="#自定义宏" class="headerlink" title="自定义宏"></a>自定义宏</h5><p>使用 <code>%define</code> 可自定义宏变量。</p>
+<blockquote>
+<p>注意：<br>打包时会对所有安装的文件进行 <code>strip</code> 操作，去除调试信息等。<code>strip</code> 操作定义在宏 <code>__os_install_post</code> 中，可通过 <code>rpmbuild --showrc</code> 查看，将其设为 <code>%{nil}</code> 可跳过 <code>strip</code> 操作。即：<code>%define __os_install_post %{nil}</code></p>
+</blockquote>
+<h3 id="rpmbuild-打包"><a href="#rpmbuild-打包" class="headerlink" title="rpmbuild 打包"></a>rpmbuild 打包</h3><p>使用 <code>rpmbuild</code> 制作rpm包，<code>rpmbuid</code> 的默认工作路径是 <code>$HOME/rpmbuild</code>，并且推荐用户在制作 rpm 软件包时尽量不要以 root 身份进行操作。</p>
+<h4 id="打包目录"><a href="#打包目录" class="headerlink" title="打包目录"></a>打包目录</h4><p>构建打包目录，一般在 <code>~/rpmbuild</code> 目录下建立以下目录：</p>
+<ul>
+<li><code>SPEC</code></li>
+<li><code>SOURCE</code> </li>
+<li><code>BUILD</code></li>
+<li><code>RPM</code></li>
+<li><code>SRPM</code></li>
+<li><code>BUILDROOT</code></li>
+</ul>
+<p>对应关系：</p>
+<table>
+<thead>
+<tr>
+<th>默认位置</th>
+<th>宏</th>
+<th>名称</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>~/rpmbuild/SPECS</td>
+<td>%_specdir</td>
+<td>spec 文件目录</td>
+<td>保存 RPM 包配置（.spec）文件</td>
+</tr>
+<tr>
+<td>~/rpmbuild/SOURCES</td>
+<td>%_sourcedir</td>
+<td>源代码目录</td>
+<td>保存源码包（如 .tar 包）和所有 patch 补丁</td>
+</tr>
+<tr>
+<td>~/rpmbuild/BUILD</td>
+<td>%_builddir</td>
+<td>构建目录</td>
+<td>源码包被解压至此，并在该目录的子目录完成编译</td>
+</tr>
+<tr>
+<td>~/rpmbuild/RPMS</td>
+<td>%_rpmdir</td>
+<td>标准 RPM 包目录</td>
+<td>生成/保存二进制 RPM 包</td>
+</tr>
+<tr>
+<td>~/rpmbuild/SRPMS</td>
+<td>%_srcrpmdir</td>
+<td>源代码 RPM 包目录</td>
+<td>生成/保存源码 RPM 包（SRPM）</td>
+</tr>
+<tr>
+<td>~/rpmbuild/BUILDROOT</td>
+<td>%_buildrootdir</td>
+<td>最终安装目录</td>
+<td>保存 <code>%install</code> 阶段安装的文件</td>
+</tr>
+</tbody></table>
+<h4 id="打包命令"><a href="#打包命令" class="headerlink" title="打包命令"></a>打包命令</h4><p>切换到 <code>rpmbuild/SPECS</code> 目录下执行打包编译命令，如：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpmbuild -ba 软件名-版本.spec </span><br></pre></td></tr></tbody></table></figure>
+
+<p><code>rpmbuild</code>命令参数：</p>
+<table>
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="center"><code>-bp</code></td>
+<td align="center">只解压源码及应用补丁</td>
+</tr>
+<tr>
+<td align="center"><code>-bc</code></td>
+<td align="center">只进行编译</td>
+</tr>
+<tr>
+<td align="center"><code>-bi</code></td>
+<td align="center">只进行安装到 <code>%{buildroot}</code></td>
+</tr>
+<tr>
+<td align="center"><code>-bb</code></td>
+<td align="center">只生成二进制 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-bs</code></td>
+<td align="center">只生成源码 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>-ba</code></td>
+<td align="center">生成二进制 rpm 包和源码 rpm 包</td>
+</tr>
+<tr>
+<td align="center"><code>--target</code></td>
+<td align="center">指定生成 rpm 包的平台</td>
+</tr>
+</tbody></table>
+<h4 id="修改默认工作路径"><a href="#修改默认工作路径" class="headerlink" title="修改默认工作路径"></a>修改默认工作路径</h4><p><code>rpmbuild</code> 默认工作路径通常由 <code>%_topdir</code> 的宏变量来定义。如果想更改有以下方法：</p>
+<h5 id="修改-rpmmacros-的隐藏文件"><a href="#修改-rpmmacros-的隐藏文件" class="headerlink" title="修改 .rpmmacros 的隐藏文件"></a>修改 <code>.rpmmacros</code> 的隐藏文件</h5><p>在 <code>root</code> 下建立一个名为 <code>.rpmmacros</code> 的隐藏文件，然后在里面重新定义 <code>%_topdir</code>，指向一个新的目录名。<code>.rpmmacros</code> 文件内容如下：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">%_topdir %(<span class="built_in">echo</span> <span class="variable">$HOME</span>)/rpmbuild</span><br><span class="line"></span><br><span class="line">%_smp_mflags %( \</span><br><span class="line">    [ -z <span class="string">"<span class="variable">$RPM_BUILD_NCPUS</span>"</span> ] \\\</span><br><span class="line">        &amp;&amp; RPM_BUILD_NCPUS=<span class="string">"`/usr/bin/nproc 2&gt;/dev/null || \\\</span></span><br><span class="line"><span class="string">                             /usr/bin/getconf _NPROCESSORS_ONLN`"</span>; \\\</span><br><span class="line">    <span class="keyword">if</span> [ <span class="string">"<span class="variable">$RPM_BUILD_NCPUS</span>"</span> -gt 16 ]; <span class="keyword">then</span> \\\</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"-j16"</span>; \\\</span><br><span class="line">    <span class="keyword">elif</span> [ <span class="string">"<span class="variable">$RPM_BUILD_NCPUS</span>"</span> -gt 3 ]; <span class="keyword">then</span> \\\</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"-j<span class="variable">$RPM_BUILD_NCPUS</span>"</span>; \\\</span><br><span class="line">    <span class="keyword">else</span> \\\</span><br><span class="line">        <span class="built_in">echo</span> <span class="string">"-j3"</span>; \\\</span><br><span class="line">    <span class="keyword">fi</span> )</span><br><span class="line">    </span><br><span class="line">%__arch_install_post \</span><br><span class="line">    [ <span class="string">"%{buildarch}"</span> = <span class="string">"noarch"</span> ] || QA_CHECK_RPATHS=1 ; \</span><br><span class="line">    <span class="keyword">case</span> <span class="string">"<span class="variable">${QA_CHECK_RPATHS:-}</span>"</span> <span class="keyword">in</span> [1yY]*) /usr/lib/rpm/check-rpaths ;; <span class="keyword">esac</span> \</span><br><span class="line">    /usr/lib/rpm/check-buildroot</span><br></pre></td></tr></tbody></table></figure>
+
+<h5 id="使用-rpmbuild-命令时定义"><a href="#使用-rpmbuild-命令时定义" class="headerlink" title="使用 rpmbuild 命令时定义"></a>使用 <code>rpmbuild</code> 命令时定义</h5><p>使用 <code>rpmbuild</code> 时覆盖 <code>%_topdir</code> 的宏变量定义来指定此次打包的工作路径：</p>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">rpmbuild --define <span class="string">"_topdir <span class="variable">${dir:-新的目录}</span>"</span> -ba 软件名-版本.spec </span><br></pre></td></tr></tbody></table></figure>
+
+<script>
+        document.querySelectorAll('.github-emoji')
+          .forEach(el => {
+            if (!el.dataset.src) { return; }
+            const img = document.createElement('img');
+            img.style = 'display:none !important;';
+            img.src = el.dataset.src;
+            img.addEventListener('error', () => {
+              img.remove();
+              el.style.color = 'inherit';
+              el.style.backgroundImage = 'none';
+              el.style.background = 'none';
+            });
+            img.addEventListener('load', () => {
+              img.remove();
+            });
+            document.body.appendChild(img);
+          });
+      </script>
+    </div>
+
+    
+    
+    
+
+    <footer class="post-footer">
+
+
+<span style="margin-top:30px; color:var(--blockquote-color); font-size:0.85em">
+        <br>
+        <span class="post-end-item" title="copyright">
+            <span class="post-end-item-icon" style="margin-right: 3px">
+                <i class="fab fa-fw fa-creative-commons"></i>
+            </span>
+            <span class="post-end-item-text">采用署名-非商业性使用-相同方式共享 4.0（CC BY-NC-SA 4.0）许可协议</span>
+        </span>
+</span>
+
+
+
+
+
+
+          <div class="post-tags">
+              <a href="/tags/RPM/" rel="tag"><i class="fa fa-tag"></i> RPM</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/posts/4a17b156/" rel="prev" title="Hello World">
+                  <i class="fa fa-chevron-left"></i> Hello World
+                </a>
+            </div>
+            <div class="post-nav-item">
+                <a href="/posts/f35f8af2/" rel="next" title="CentOS 7 上安装 MySQL 5.7">
+                  CentOS 7 上安装 MySQL 5.7 <i class="fa fa-chevron-right"></i>
+                </a>
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      const activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      const commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2021</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">LiLittleCat</span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" class="theme-link" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@next-theme/pjax@0.4.0/pjax.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jquery@3.5.1/dist/jquery.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@fancyapps/fancybox@3.5.7/dist/jquery.fancybox.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js"></script>
+<script src="/js/utils.js"></script><script src="/js/motion.js"></script><script src="/js/next-boot.js"></script><script>
+var pjax = new Pjax({
+  selectors: [
+    'head title',
+    '.page-configurations',
+    '.main-inner',
+    '.post-toc-wrap',
+    '.languages',
+    '.pjax'
+  ],
+  analytics: false,
+  cacheBust: false,
+  scrollRestoration: false,
+  scrollTo: !CONFIG.bookmark.enable
+});
+
+document.addEventListener('pjax:success', () => {
+  pjax.executeScripts(document.querySelectorAll('script[data-pjax], .pjax script'));
+  NexT.boot.refresh();
+  // Define Motion Sequence & Bootstrap Motion.
+  if (CONFIG.motion.enable) {
+    NexT.motion.integrator
+      .init()
+      .add(NexT.motion.middleWares.subMenu)
+      .add(NexT.motion.middleWares.postList)
+      .bootstrap();
+  }
+  const hasTOC = document.querySelector('.post-toc');
+  document.querySelector('.sidebar-inner').classList.toggle('sidebar-nav-active', hasTOC);
+  document.querySelector(hasTOC ? '.sidebar-nav-toc' : '.sidebar-nav-overview').click();
+  NexT.utils.updateSidebarPosition();
+});
+</script>
+
+
+  
+<script src="/js/local-search.js"></script>
+
+
+
+<script data-pjax>
+if (document.querySelectorAll('.pdf-container').length) {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/pdfobject@2.2.4/pdfobject.min.js', () => {
+    document.querySelectorAll('.pdf-container').forEach(element => {
+      PDFObject.embed(element.dataset.target, element, {
+        pdfOpenParams: {
+          navpanes : 0,
+          toolbar  : 0,
+          statusbar: 0,
+          pagemode : 'thumbs',
+          view     : 'FitH'
+        },
+        PDFJS_URL: '/lib/pdf/web/viewer.html',
+        height   : element.dataset.height
+      });
+    });
+  }, window.PDFObject);
+}
+</script>
+
+<script data-pjax>
+if (document.querySelectorAll('.mermaid').length) {
+  NexT.utils.getScript('https://cdn.jsdelivr.net/npm/mermaid@8.9.1/dist/mermaid.min.js', () => {
+    mermaid.init({
+      theme    : 'forest',
+      logLevel : 3,
+      flowchart: { curve     : 'linear' },
+      gantt    : { axisFormat: '%m/%d/%Y' },
+      sequence : { actorMargin: 50 }
+    }, '.mermaid');
+  }, window.mermaid);
+}
+</script>
+
+
+  
+
+
+
+    <div class="pjax">
+
+  
+
+
+    </div>
+</body>
+</html>
