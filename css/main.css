@@ -181,7 +181,7 @@ body {
 body {
   background: var(--body-bg-color);
   color: var(--text-color);
-  font-family: EB Garamond, Noto Serif SC, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 1em;
   line-height: 2;
   min-height: 100%;
@@ -194,7 +194,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: EB Garamond, Noto Serif SC, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: Ubuntu, Noto Sans SC, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-weight: bold;
   line-height: 1.5;
   margin: 20px 0 15px;
@@ -509,7 +509,7 @@ pre {
 }
 pre,
 code {
-  font-family: JetBrains Mono, consolas, Menlo, monospace, 'PingFang SC', 'Microsoft YaHei';
+  font-family: JetBrains Mono, Noto Sans SC, consolas, Menlo, monospace, 'PingFang SC', 'Microsoft YaHei';
 }
 code {
   border-radius: 3px;
@@ -1242,8 +1242,8 @@ pre code {
   color: var(--brand-hover-color);
 }
 .site-title {
-  font-family: ZCOOL KuaiLe, EB Garamond, Noto Serif SC, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  font-size: 1.375em;
+  font-family: ZCOOL KuaiLe, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-size: 2em;
   font-weight: normal;
   margin: 0;
 }
@@ -1366,10 +1366,6 @@ pre code {
   max-width: 120px;
   padding: 2px;
   border-radius: 50%;
-  transition: transform 1s ease-out;
-}
-.site-author-image:hover {
-  transform: rotateZ(360deg);
 }
 .site-author-name {
   color: var(--text-color);
@@ -1907,7 +1903,7 @@ pre code {
   width: 4px;
 }
 .post-body {
-  font-family: EB Garamond, Noto Serif SC, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: Ubuntu, Noto Sans SC, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   overflow-wrap: break-word;
 }
 @media (min-width: 1200px) {
@@ -2101,7 +2097,7 @@ pre code {
 }
 .posts-expand .post-meta-container {
   color: #999;
-  font-family: EB Garamond, Noto Serif SC, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family: Ubuntu, Noto Sans SC, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 0.75em;
   margin-top: 3px;
 }
@@ -2948,31 +2944,12 @@ mjx-container[display="true"] + br {
   }
 }
 /* header-页面背景 */
-body {
-  background-image: url("$body-bg-url");
-  background-repeat: repeat;
-  background-attachment: fixed;
-}
-@media (prefers-color-scheme: dark) {
-  body {
-    background-image: none;
-  }
-}
 /* Day of Mourning */
-.site-title {
-  font-weight: bold;
-}
+/************************ Sidebar **************************/
+/* sidebar-标题背景 */
+/* sidebar-标题 */
 /* sidebar-副标题 */
-.site-subtitle {
-  font-weight: bold;
-  font-family: "EB Garamond", STKaiti, KaiTi, SimKai, DFKai-SB, "Noto Serif SC";
-  color: var(--brand-color);
-  font-size: 0.9em;
-}
 /* sidebar-站点描述介绍 */
-.site-description {
-  color: var(--blockquote-color);
-}
 /* sidebar-二级菜单圆角 */
 .sub-menu {
   border-radius: 8px !important;
@@ -2986,7 +2963,7 @@ body {
 /* post-首页文章标题 */
 .index .post-title {
   text-align: left;
-  border-left: #fff 8px solid;
+  border-left: var(--text-color) 8px solid;
   padding-left: 10px;
 }
 /* post-首页文章信息 */
@@ -3035,16 +3012,7 @@ p {
   box-shadow: $image-box-shadow;
 }
 /* post-引用与 note 字体 */
-blockquote p,
-.post-body .note {
-  font-family: "EB Garamond", STKaiti, KaiTi, SimKai, DFKai-SB, "Noto Serif SC";
-}
 /* post-行内代码 */
-code {
-  font-size: 0.85em;
-  background: none;
-  color: var(--text-color);
-}
 /* post-思源宋体列表打叉修复 */
 li {
   text-align: left;
@@ -3053,7 +3021,6 @@ li {
 /* button-back2top */
 .back-to-top {
   opacity: 0.8;
-  font-weight: bold;
   font-size: 1em;
   border-radius: 1em;
 }
@@ -3111,10 +3078,6 @@ li {
   border-color: transparent;
 }
 /* 修改选中字符的颜色 */
-::selection {
-  background: rgba(0,149,255,0.2);
-  color: var(--blockquote-color);
-}
 /****************** Pagination & Footer ********************/
 /* pagination-删去页码框 */
 .pagination {
