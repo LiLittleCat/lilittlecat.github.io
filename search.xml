@@ -122,7 +122,7 @@
     <title>Java 容器 - 概述</title>
     <url>/posts/81a892b9/</url>
     <content><![CDATA[<h2 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h2><p>一个程序在运行过程中会根据某些条件创建多个对象，这些条件和创建对象的个数在运行之前都是未知的。为此，Java 提供了多种方式来保存对象（对象的引用）。比如数组，但是数组的大小在创建时就已固定，不适合复杂的持有对象的场景。除此之外，Java 类库中还提供了一套容器类来解决这个问题。</p>
-<p>其中基本的类型是 <strong>List</strong>、<strong>Set</strong>、<strong>Queue</strong> 和 <strong>Map</strong>，这些对象类型也称为<em>集合类</em>，但由于 Java 类库中使用了 <strong>Collection</strong> 这个名词指代某一对象，所以把这些用来保存对象的类统称为”容器“。</p>
+<p>其中基本的类型是 <strong>List</strong>、<strong>Set</strong>、<strong>Queue</strong> 和 <strong>Map</strong>，这些对象类型也称为<em>集合类</em>，但由于 Java 类库中使用了 <strong>Collection</strong> 这个名词指代某一对象，所以把这些用来保存对象的类统称为“容器”。</p>
 <h2 id="类图"><a href="#类图" class="headerlink" title="类图"></a>类图</h2><p>JDK 8 中 Collection 和 Map 的类图如下所示：<br><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/blog/Collection.svg" alt="Collection"></p>
 <p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/blog/Map.svg" alt="Map"></p>
 <p>其中单独列出的接口和类：</p>
