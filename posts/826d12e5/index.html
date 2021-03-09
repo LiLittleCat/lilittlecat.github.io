@@ -50,7 +50,7 @@
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/blog/image-20210128000142672.png">
 <meta property="og:image" content="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/blog/image-20210128001951493.png">
 <meta property="article:published_time" content="2021-03-09T13:42:09.000Z">
-<meta property="article:modified_time" content="2021-03-09T16:46:00.008Z">
+<meta property="article:modified_time" content="2021-03-09T17:28:51.850Z">
 <meta property="article:author" content="LiLittleCat">
 <meta property="article:tag" content="设计模式">
 <meta name="twitter:card" content="summary">
@@ -415,18 +415,18 @@
 <p>该原则对子类的具体要求：</p>
 <ul>
 <li><p>子类方法的参数类型必须与其父类的参数类型相匹配或更加抽象。</p>
-<p>父类有方法 <code>feed(Cat c)</code>，子类重写 <code>feed(Animal c)</code> :heavy_check_mark: <code>feed(BlackCat c)</code> <span class="github-emoji" style="color: transparent;background:no-repeat url(https://github.githubassets.com/images/icons/emoji/unicode/274c.png?v8) center/contain" data-src="https://github.githubassets.com/images/icons/emoji/unicode/274c.png?v8">❌</span></p>
+<p>父类有方法 <code>feed(Cat c)</code>，子类重写 <code>feed(Animal c)</code> ✔️​ <code>feed(BlackCat c)</code> ❌</p>
 </li>
 <li><p>子类方法的返回值类型必须与父类方法的返回值类型或是其子类相匹配。</p>
-<p>父类有方法 <code>Cat buyCat()</code>，子类重写 <code>BlackCat buyCat()</code> :heavy_check_mark: <code>Animal buyCat()</code> <span class="github-emoji" style="color: transparent;background:no-repeat url(https://github.githubassets.com/images/icons/emoji/unicode/274c.png?v8) center/contain" data-src="https://github.githubassets.com/images/icons/emoji/unicode/274c.png?v8">❌</span></p>
+<p>父类有方法 <code>Cat buyCat()</code>，子类重写 <code>BlackCat buyCat()</code> ✔️​ <code>Animal buyCat()</code> ❌</p>
 </li>
 <li><p>子类中的方法不应抛出基础方法预期之外的异常类型。</p>
 </li>
 <li><p>子类不应该加强其前置条件。</p>
-<p>父类方法参数为 <code>int</code>，子类方法参数为 <code>正数</code><span class="github-emoji" style="color: transparent;background:no-repeat url(https://github.githubassets.com/images/icons/emoji/unicode/274c.png?v8) center/contain" data-src="https://github.githubassets.com/images/icons/emoji/unicode/274c.png?v8">❌</span></p>
+<p>父类方法参数为 <code>int</code>，子类方法参数为 <code>正数</code>❌</p>
 </li>
 <li><p>子类不能削弱其后置条件。</p>
-<p>父类方法使用数据库连接并关闭，子类方法不关闭连接<span class="github-emoji" style="color: transparent;background:no-repeat url(https://github.githubassets.com/images/icons/emoji/unicode/274c.png?v8) center/contain" data-src="https://github.githubassets.com/images/icons/emoji/unicode/274c.png?v8">❌</span></p>
+<p>父类方法使用数据库连接并关闭，子类方法不关闭连接❌</p>
 </li>
 <li><p>父类的不变量必须保留。</p>
 </li>
