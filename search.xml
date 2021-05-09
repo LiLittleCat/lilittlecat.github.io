@@ -800,22 +800,22 @@ MyBatis 是一款优秀的持久层框架，它支持自定义 SQL、存储过�
 <li>JDBC 处理器逻辑</li>
 </ol>
 <p>如图所示：</p>
-<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210429001446963.png" alt="image-20210429001446963"></p>
+<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210429001446963.png" alt="Mybatis 执行过程"></p>
 <p>SqlSession 中提供了基本 API：增、删、改、查</p>
-<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210428202606059.png" alt="image-20210428202606059"></p>
+<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210428202606059.png" alt="SqlSession 的方法"></p>
 <p>其中 <code>select()</code> 方法有很多，他们的区别主要在参数和返回结果上。</p>
-<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210428203039799.png" alt="image-20210428203039799"></p>
+<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210428203039799.png" alt="SqlSession 的 Select() 方法"></p>
 <p>返回结果上，有 <code>void</code>，游标 <code>Cursor&lt;T&gt;</code>，<code>List&lt;E&gt;</code>，<code>Map&lt;K, V&gt;</code>，一条数据 <code>T</code>。参数上，<code>String</code> 就是 StatementId，Mybatis 中所有操作（增删改查）都有一个 Id，通过 Id 找到 SQL 映射，<code>Object</code> 就是 SQL 中的参数，<code>ResultHandler</code> 对结果集进行处理，<code>RowBound</code> 用于设置返回的范围，用于进行分页。多个 <code>select()</code> 方法重载的设计用意是为了方便调用，这种方便调用进行的重载就是<code>门面模式</code>。</p>
 <p>除了基本 API 之外，还有辅助 API，即提交和关闭会话。会话中可执行多个 SQL，一个会话只能被一个线程调用，线程使用完 SqlSession 后应该立马把它关闭掉，但一个线程可调用多个会话。因此，SqlSession 不能跨线程使用，也即它不是线程安全的。</p>
 <p>在 MyBatis 中，DefaultSqlSession 继承了 SqlSession 接口，是 SqlSession 的默认实现，在该实现类中，包含了两个重要对象 <strong>Configuration</strong> 和 <strong>Executor</strong>。</p>
 <figure class="highlight java"><table><tbody><tr><td class="code"><pre><span class="line"><span class="keyword">public</span> <span class="class"><span class="keyword">class</span> <span class="title">DefaultSqlSession</span> <span class="keyword">implements</span> <span class="title">SqlSession</span> </span>{</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Configuration configuration;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> Executor executor;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">final</span> <span class="keyword">boolean</span> autoCommit;</span><br><span class="line">  <span class="keyword">private</span> <span class="keyword">boolean</span> dirty;</span><br><span class="line">  <span class="keyword">private</span> List&lt;Cursor&lt;?&gt;&gt; cursorList;</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">DefaultSqlSession</span><span class="params">(Configuration configuration, Executor executor, <span class="keyword">boolean</span> autoCommit)</span> </span>{</span><br><span class="line">    <span class="keyword">this</span>.configuration = configuration;</span><br><span class="line">    <span class="keyword">this</span>.executor = executor;</span><br><span class="line">    <span class="keyword">this</span>.dirty = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">this</span>.autoCommit = autoCommit;</span><br><span class="line">  }</span><br><span class="line"></span><br><span class="line">  <span class="function"><span class="keyword">public</span> <span class="title">DefaultSqlSession</span><span class="params">(Configuration configuration, Executor executor)</span> </span>{</span><br><span class="line">    <span class="keyword">this</span>(configuration, executor, <span class="keyword">false</span>);</span><br><span class="line">  }</span><br><span class="line">  </span><br><span class="line">  ...</span><br><span class="line">  </span><br><span class="line">}</span><br></pre></td></tr></tbody></table></figure>
 
 <p>SqlSession 只提供 SQL 会话，具体执行交给 Executor。Executor 也提供了基本功能，其中包括改、查、缓存维护和事务管理。还提供了辅助 API，包括提交、关闭执行器和批处理刷新。</p>
-<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210428212838383.png" alt="image-20210428212838383"></p>
+<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210428212838383.png" alt="Executor 的方法"></p>
 <p>Executor 本身也不会去执行 SQL，执行 SQL 交给了 StatementHandler，StatementHandler 本质上使用了 JDBC 中的 Statement 进行参数处理、执行 SQL 和处理结果。</p>
 <p>其中 1 个 SqlSession 对应 1 个 Executor ， 1 个 Executor 对应 n 个 StatementHandler，即执行多少条 SQL 就有多少个 StatementHandler。它们都不能够跨线程调用。</p>
 <h2 id="Executor-执行器体系"><a href="#Executor-执行器体系" class="headerlink" title="Executor 执行器体系"></a>Executor 执行器体系</h2><p>Executor 的继承体系：</p>
-<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/BaseExecutor.svg" alt="image-20210428213919624"></p>
+<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/BaseExecutor.svg" alt="Executor 的继承体系"></p>
 <ol>
 <li>BaseExecutor：基础执行器，是一个抽象类，提供了关于 SimpleExecutor、ReuseExecutor、BatchExecutor 共性相关的功能实现，此外，BaseExecutor 还与 MyBatis 的一级缓存和事务管理相关</li>
 <li>SimpleExecutor：简单执行器，每次都会创建一个新的 Statement（默认是 PreparedStatement）</li>
@@ -862,7 +862,7 @@ MyBatis 是一款优秀的持久层框架，它支持自定义 SQL、存储过�
 </li>
 </ol>
 <p>最终 Executor 的执行体系如下图：</p>
-<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210429000500432.png" alt="image-20210429000500432"></p>
+<p><img data-src="https://cdn.jsdelivr.net/gh/LiLittleCat/PicBed/images/mybatis/image-20210429000500432.png" alt="Executor 的执行体系"></p>
 <script>
         document.querySelectorAll('.github-emoji')
           .forEach(el => {
