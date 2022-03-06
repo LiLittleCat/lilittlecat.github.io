@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width">
 <meta name="theme-color" content="#222" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 5.4.0">
+<meta name="theme-color" content="#222" media="(prefers-color-scheme: dark)"><meta name="generator" content="Hexo 5.4.1">
 
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
@@ -292,7 +292,7 @@
 ## 开始安装
 
 <p>卸载自带 mariadb 和已安装的 MySQL，如遇到依赖问题导致卸载出错则加上 <code>--nodeps</code> 参数：</p>
-<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 停止服务</span></span><br><span class="line">systemctl stop mysqld mariadb</span><br><span class="line">systemctl <span class="built_in">disable</span> mysqld mariadb</span><br><span class="line"><span class="comment"># 卸载已安装服务</span></span><br><span class="line">rpm -qa | grep mysql | xargs rpm -e</span><br><span class="line">rpm -qa | grep mariadb | xargs rpm -e --nodeps</span><br><span class="line"><span class="comment"># 删除相关文件</span></span><br><span class="line">rm -rvf /etc/my.cnf /var/lib/mysql /var/<span class="built_in">log</span>/mysqld.log</span><br><span class="line"><span class="comment"># 删除用户，非必须</span></span><br><span class="line">userdel -rf mysql</span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># 停止服务</span></span><br><span class="line">systemctl stop mysqld mariadb</span><br><span class="line">systemctl <span class="built_in">disable</span> mysqld mariadb</span><br><span class="line"><span class="comment"># 卸载已安装服务</span></span><br><span class="line">rpm -qa | grep mysql | xargs rpm -e</span><br><span class="line">rpm -qa | grep mariadb | xargs rpm -e --nodeps</span><br><span class="line"><span class="comment"># 删除相关文件</span></span><br><span class="line"><span class="built_in">rm</span> -rvf /etc/my.cnf /var/lib/mysql /var/log/mysqld.log</span><br><span class="line"><span class="comment"># 删除用户，非必须</span></span><br><span class="line">userdel -rf mysql</span><br></pre></td></tr></tbody></table></figure>
 
 <h2 id="下载安装-MySQL"><a href="#下载安装-MySQL" class="headerlink" title="下载安装 MySQL"></a>下载安装 MySQL</h2><h3 id="网络畅通推荐使用-YUM"><a href="#网络畅通推荐使用-YUM" class="headerlink" title="网络畅通推荐使用 YUM"></a>网络畅通推荐使用 YUM</h3><p>下载 Repository：</p>
 <figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">wget -c http://repo.mysql.com/mysql57-community-release-el7-10.noarch.rpm <span class="comment">#  -c 断点续传</span></span><br></pre></td></tr></tbody></table></figure>
@@ -317,7 +317,7 @@
 <figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">systemctl <span class="built_in">enable</span> mysqld</span><br><span class="line">systemctl daemon-reload</span><br></pre></td></tr></tbody></table></figure>
 
 <h2 id="修改登录密码"><a href="#修改登录密码" class="headerlink" title="修改登录密码"></a>修改登录密码</h2><p>查看安装完之后 root 用户的临时密码：</p>
-<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grep <span class="string">"temporary password"</span> /var/<span class="built_in">log</span>/mysqld.log | awk -F <span class="string">" "</span> <span class="string">'{print $11}'</span> | awk <span class="string">'END{print}'</span></span><br></pre></td></tr></tbody></table></figure>
+<figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">grep <span class="string">"temporary password"</span> /var/log/mysqld.log | awk -F <span class="string">" "</span> <span class="string">'{print $11}'</span> | awk <span class="string">'END{print}'</span></span><br></pre></td></tr></tbody></table></figure>
 
 <p>登录 MySQL，第一次登录需要修改密码之后才能操作：</p>
 <figure class="highlight sh"><table><tbody><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mysql -u root -p</span><br></pre></td></tr></tbody></table></figure>
